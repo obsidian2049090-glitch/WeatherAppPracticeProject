@@ -8,37 +8,77 @@ import WeatherInfo from "@/components/weather/WeatherInfo";
 import WeatherDetails from "@/components/weather/WeatherDetails";
 import DailyForecast from "@/components/weather/DailyForecast";
 import HourlyForecast from "@/components/weather/HourlyForecast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-import { fetchWeatherApi } from "openmeteo";
 import { useState, useEffect } from "react";
 
-// useState 
-// let lat = 0
-// let lon = 0
+interface WeatherData {
+  current: {
+    time: string;
+    temperature_2m: number;
+    relative_humidity_2m: number;
+    apparent_temperature: number;
+    precipitation: number;
+    rain: number;
+    showers: number;
+    snowfall: number;
+    weather_code: number;
+    wind_speed_10m: number;
+  };
+  daily: {
+    time: string[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+    weather_code: number[];
+    precipitation_sum: number[];
+  };
+  hourly: {
+    time: string[];
+    temperature_2m: number[];
+    weather_code: number[];
+  };
+}
 
-// const [lat, setLat] = useState(0)
-// const [lon, setLon] = useState(0)
+interface CityWeather {
+  city: string;
+  data: WeatherData;
+}
 
-// setLat(61.20)
-// setLon(25.03)
+
+const KOREA_CITIES = [
+  { name: "Seoul", lat: 37.5665, lon: 126.978 },
+  { name: "Busan", lat: 35.1796, lon: 129.0756 },
+  { name: "Incheon", lat: 37.4563, lon: 126.7052 },
+  { name: "Daegu", lat: 35.8714, lon: 128.6014 },
+  { name: "Daejeon", lat: 36.3504, lon: 127.3845 },
+  { name: "Gwangju", lat: 35.1595, lon: 126.8526 },
+  { name: "Jeju", lat: 33.4996, lon: 126.5312 },
+];
+
 
 export default function Home() {
-	const [responses, setResponses] = useState<Awaited<ReturnType<typeof fetchWeatherApi>> | null>(null);
+  const [citiesWeather, setCitiesWeather] = useState<CityWeather[]>([])
+  const [selectedCity, setSelectedCity] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
 	const fetchData = async () => {
-		const params = {
-			latitude: [52.52, 50.12, 53.55],
-			longitude: [13.41, 8.68, 9.99],
-			// daily: ["temperature_2m_max", "temperature_2m_min", "rain_sum", "showers_sum", "snowfall_sum"],
-			// hourly: ["weather_code", "temperature_2m", "temperature_180m"],
-			current: ["temperature_2m", "relative_humidity_2m", "apparent_temperature", "precipitation", "rain", "showers", "snowfall", "weather_code", "wind_speed_10m"],
-		};
-		const url = "https://api.open-meteo.com/v1/forecast";
-		const data = await fetchWeatherApi(url, params);
-		setResponses(data);
-		setLoading(false);
+    const results = await Promise.all(
+      KOREA_CITIES.map(async (city) => {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum&hourly=temperature_2m,weather_code`;
+        const response = await fetch(url)
+        const data = await response.json()
+        return { city: city.name, data}
+      })
+    )
+    setCitiesWeather(results)
+    setLoading(false)
 	};
 
 	fetchData();
@@ -46,8 +86,11 @@ export default function Home() {
   }, [])
 
   if (loading) return <main>Loading...</main>
-  if (!responses) return <main>No data</main>
+  if (citiesWeather.length === 0) return <main>No data</main>
   
+  const weather = citiesWeather[selectedCity].data
+  const cityName = citiesWeather[selectedCity].city
+
   return (
     <>
       <header className="flex justify-between align-center py-2 px-2 max-w-7xl mx-auto">
@@ -60,15 +103,32 @@ export default function Home() {
       <main className="p-4 max-w-7xl mx-auto">
         <h1 className="justify-center text-center text-4xl md:text-5xl py-8 font-bold text-balance">How's the sky<br />looking today?</h1>
         <div>
-          <SearchForm />
+          {/* <SearchForm /> */}
+          <div className="flex justify-center mb-6">
+            <Select
+              value={String(selectedCity)}
+              onValueChange={(val) => setSelectedCity(Number(val))}
+            >
+              <SelectTrigger className="w-48 bg-w-neutral-800 text-white border-0">
+                <SelectValue placeholder="Select city" />
+              </SelectTrigger>
+              <SelectContent className="bg-w-neutral-800 text-white border-0">
+                {citiesWeather.map((cityData, index) => (
+                  <SelectItem key={cityData.city} value={String(index)}>
+                    {cityData.city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid py-6 gap-8 xl:grid-cols-3 xl:items-start">
             <div className="xl:col-span-2">
 			  {/* <WeatherStats data={responses[0].current}/> */}
-			  <WeatherInfo data={responses?.[0].current} city={"Seoul"}/>
-              <WeatherDetails data={responses?.[0].current}/>
-              <DailyForecast data={responses?.[0].daily} />
+			  <WeatherInfo data={weather.current} city={cityName}/>
+              <WeatherDetails data={weather.current}/>
+              <DailyForecast data={weather.daily} />
             </div>
-            <HourlyForecast data={responses?.[0].hourly}/>
+            <HourlyForecast data={weather.hourly}/>
           </div>
         </div>
       </main>
