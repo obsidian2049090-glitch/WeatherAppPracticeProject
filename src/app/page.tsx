@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button"
 import SearchForm from "@/components/SearchModule";
-import WeatherStats from "@/components/WeatherStat";
 import WeatherInfo from "@/components/weather/WeatherInfo";
 import WeatherDetails from "@/components/weather/WeatherDetails";
 import DailyForecast from "@/components/weather/DailyForecast";
@@ -123,7 +122,6 @@ export default function Home() {
           </div>
           <div className="grid py-6 gap-8 xl:grid-cols-3 xl:items-start">
             <div className="xl:col-span-2">
-			  {/* <WeatherStats data={responses[0].current}/> */}
 			  <WeatherInfo data={weather.current} city={cityName}/>
               <WeatherDetails data={weather.current}/>
               <DailyForecast data={weather.daily} />

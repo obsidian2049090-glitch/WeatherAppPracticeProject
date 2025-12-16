@@ -1,6 +1,14 @@
 
+interface WeatherDetailsProps {
+  data: {
+    apparent_temperature: number
+    relative_humidity_2m: number
+    wind_speed_10m: number
+    precipitation: number
+  }
+}
 
-export default function WeatherDetails({data}) {
+export default function WeatherDetails({data}: WeatherDetailsProps) {
     const weatherDetails = [
       { key: "Feels like", value: `${Math.round(data.apparent_temperature)}°` },
       { key: "Humidity", value: `${Math.round(data.relative_humidity_2m)}%` },

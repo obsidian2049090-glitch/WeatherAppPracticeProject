@@ -41,7 +41,7 @@ interface DailyForecastProps {
     weather_code: number[];
     precipitation_sum: number[];
   };
-}
+} 
 
 function formatDay(dateStr: string): string {
   const date = new Date(dateStr)
